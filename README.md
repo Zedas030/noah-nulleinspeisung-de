@@ -7,6 +7,21 @@ Haupt- und Zusatzakku und zwei Watchdogs, die aufs Handy melden, wenn die Regelu
 
 Läuft seit Oktober 2026 auf einem Raspberry Pi mit Home Assistant, Mosquitto und Docker.
 
+## Datenfluss
+
+```mermaid
+flowchart LR
+  G[Growatt-Cloud] <--> N[noah-mqtt<br/>Docker]
+  N <--> M[(Mosquitto)]
+  M <--> HA[Home Assistant]
+  Z[Smart Meter, Messsteckdosen<br/>oder Template] --> H[sensor.hausverbrauch]
+  H --> HA
+  HA -- jede Minute Sollwert --> N
+  HA -- alle 10 s home/hausverbrauch --> M
+  M --> U[uni-meter<br/>optional, emulierter Smart Meter]
+  HA -. Watchdogs .-> P[Push aufs Handy]
+```
+
 ## Wie die Regelung rechnet
 
 Jede Minute, wenn alle Werte verfügbar sind:
@@ -22,6 +37,15 @@ Jede Minute, wenn alle Werte verfügbar sind:
 
 Der Puffer lässt bewusst etwas Netzbezug zu. So deckt der Speicher den Grundverbrauch, ohne bei
 jeder kurzen Lastspitze hinterherzuregeln und dabei ins Netz einzuspeisen.
+
+### Beispiel
+
+Hausverbrauch 420 W, Akkus bei 55 % und 58 %, Sonne scheint, letzter Sollwert 300 W:
+
+1. SoC für alle Regeln ist der niedrigere Wert, also 55 %. Puffer daher 90 W, Obergrenze 800 W.
+2. Ziel = 420 − 90 = 330 W, liegt zwischen 50 und 800 W.
+3. Abweichung der Akkus 3 %, also keine Drosselung.
+4. 330 W weichen nur 30 W vom letzten Sollwert ab, unter der Hysterese von 40 W. Es wird nichts gesendet.
 
 ## Bausteine
 
@@ -49,6 +73,15 @@ ihr Code ist nicht Teil dieses Repos.
 4. Optional **uni-meter** mit der Beispielkonfiguration starten, wenn ein Gerät im LAN einen
    Smart Meter erwartet.
 5. Optional den **systemd-Watchdog** und das **SSH-Skript** auf dem Docker-Host einrichten.
+
+## Fehlerbehebung
+
+| Symptom | Ursache und Lösung |
+|---|---|
+| Sollwert ändert sich stundenlang nicht | Normal, wenn der Akku an der Entladegrenze sitzt oder der Verbrauch innerhalb der Hysterese bleibt. Der Watchdog warnt deshalb nur, wenn der Akku über Entladegrenze plus 3 % liegt. |
+| Automation läuft nie | Eine der Entitäten in der Bedingung „Alle Entitäten verfügbar“ ist `unavailable`. Unter Entwicklerwerkzeuge → Zustände prüfen, meist ist noah-mqtt nicht verbunden. |
+| NOAH-Entitäten fehlen in Home Assistant | MQTT-Integration in HA einrichten und `docker logs noah-mqtt` auf Anmeldefehler an der Growatt-Cloud prüfen. |
+| Ständiger Wechsel zwischen zwei Sollwerten | Hausverbrauch schwankt um die Hysterese. Hysterese auf 60 W erhöhen oder den Verbrauchssensor glätten. |
 
 ## Grenzen
 
