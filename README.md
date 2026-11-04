@@ -83,6 +83,25 @@ ihr Code ist nicht Teil dieses Repos.
 | NOAH-Entitäten fehlen in Home Assistant | MQTT-Integration in HA einrichten und `docker logs noah-mqtt` auf Anmeldefehler an der Growatt-Cloud prüfen. |
 | Ständiger Wechsel zwischen zwei Sollwerten | Hausverbrauch schwankt um die Hysterese. Hysterese auf 60 W erhöhen oder den Verbrauchssensor glätten. |
 
+## Zugangsdaten und eigene Werte
+
+Im Repo stehen keine echten Zugangsdaten, keine IP-Adressen und keine Seriennummern. Diese Stellen
+müssen mit den eigenen Werten gefüllt werden:
+
+| Was | Im Repo | Wo der echte Wert hingehört |
+|---|---|---|
+| Adresse des MQTT-Brokers | `<mqtt-host>` | `MQTT_HOST` in `docker/.env` (Vorlage [`docker/.env.example`](docker/.env.example)) und `url` in `docker/uni-meter/uni-meter.conf` |
+| MQTT-Benutzer und -Passwort | `<mqtt-benutzer>`, `<mqtt-passwort>` | `MQTT_USERNAME`, `MQTT_PASSWORD` in `docker/.env`, dazu `user`/`password` in `docker/uni-meter/uni-meter.conf` |
+| Login der Growatt-Cloud | `<growatt-login>`, `<growatt-passwort>` | `GROWATT_USERNAME`, `GROWATT_PASSWORD` in `docker/.env` |
+| uni-meter-Konfiguration | [`uni-meter.conf.example`](docker/uni-meter/uni-meter.conf.example) | kopieren nach `docker/uni-meter/uni-meter.conf` und ausfüllen |
+| Entität des Zusatzakkus | `sensor.noah_2000_bat1_soc` | in [`homeassistant/automations.yaml`](homeassistant/automations.yaml) durch die eigene ID ersetzen. Bei manchen Anlagen enthält sie die Seriennummer. |
+| Benachrichtigung aufs Handy | `notify.mobile_app_mein_handy` | in `automations.yaml` durch den eigenen Dienst der Companion-App ersetzen |
+| Hausverbrauch | `sensor.hausverbrauch` | eigener Sensor, Beispiel in [`homeassistant/helpers.yaml`](homeassistant/helpers.yaml) |
+| Ordner auf dem Docker-Host | `/opt/noah-nulleinspeisung/docker` | `WorkingDirectory` in [`pi/noah-mqtt.service`](pi/noah-mqtt.service) |
+| SSH-Schlüssel für den Neustart aus Home Assistant | nicht enthalten | eigenen Schlüssel erzeugen und in `~/.ssh/authorized_keys` des Docker-Hosts mit `command="/pfad/noah-mqtt-ensure.sh"` eintragen |
+
+`docker/.env` und `docker/uni-meter/uni-meter.conf` stehen in `.gitignore`.
+
 ## Grenzen
 
 - Die Daten kommen über die Growatt-Cloud, nicht lokal vom Gerät. Fällt die Cloud aus, steht
