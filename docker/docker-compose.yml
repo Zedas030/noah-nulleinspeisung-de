@@ -1,0 +1,30 @@
+services:
+  # Liest den NOAH ueber die Growatt-Cloud und stellt ihn per MQTT (mit Home-Assistant-Discovery) bereit.
+  # Projekt: https://github.com/mtrossbach/noah-mqtt
+  noah-mqtt:
+    image: ghcr.io/mtrossbach/noah-mqtt:latest
+    container_name: noah-mqtt
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      TZ: "Europe/Berlin"
+      MQTT_HOST: "${MQTT_HOST}"
+      MQTT_PORT: "1883"
+      GROWATT_API_MODE: "web+app"
+      LOG_LEVEL: "INFO"
+      POLLING_INTERVAL: "60"
+      BATTERY_DETAILS_POLLING_INTERVAL: "300"
+      PARAMETER_POLLING_INTERVAL: "300"
+
+  # Optional: emuliert einen Smart Meter (EcoTracker) im LAN und speist ihn aus dem MQTT-Topic home/hausverbrauch.
+  # Projekt: https://github.com/sdeigm/uni-meter
+  uni-meter:
+    image: sdeigm/uni-meter:latest
+    container_name: uni-meter
+    environment:
+      TZ: "Europe/Berlin"
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./uni-meter/uni-meter.conf:/etc/uni-meter.conf

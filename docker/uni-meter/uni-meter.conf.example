@@ -1,0 +1,32 @@
+uni-meter {
+  output = "uni-meter.output-devices.eco-tracker"
+  input = "uni-meter.input-devices.mqtt"
+
+  http-server {
+    port = 8181
+  }
+
+  output-devices {
+    eco-tracker {
+      udp-port = 1010
+      hostname = ""
+      polling-interval = 3s
+    }
+  }
+
+  input-devices {
+    mqtt {
+      url = "tcp://<mqtt-host>:1883"
+      user = "<mqtt-benutzer>"
+      password = "<mqtt-passwort>"
+      power-phase-mode = "mono-phase"
+      energy-phase-mode = "mono-phase"
+      channels = [{
+        type = "json"
+        topic = "home/hausverbrauch"
+        channel = "power-l1"
+        json-path = "$.power"
+      }]
+    }
+  }
+}
